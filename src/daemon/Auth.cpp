@@ -272,7 +272,14 @@ namespace DDM {
                 qCritical() << "[SessionLeader] Failed to open session. Exit now.";
                 exit(1);
             }
-            env = *sessionEnv;
+            // Keep the session metadata prepared by DDM. PAM may overwrite
+            // XDG_SESSION_TYPE/XDG_SESSION_DESKTOP with generic tty values,
+            // which breaks the user-side Treeland units started by dde-session.
+            auto mergedEnv = *sessionEnv;
+            const auto originalKeys = env.keys();
+            for (const auto &key : originalKeys)
+                mergedEnv.insert(key, env.value(key));
+            env = mergedEnv;
 
             // Retrieve XDG_SESSION_ID
             xdgSessionId = env.value(QStringLiteral("XDG_SESSION_ID")).toInt();
