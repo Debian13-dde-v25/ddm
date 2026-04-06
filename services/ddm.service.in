@@ -11,7 +11,9 @@ Requires=seatd.service
 Before=seatd.service
 
 [Service]
+ExecStartPre=-/usr/bin/pkill -9 -x ddm
 ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/ddm
+ExecStopPost=-/usr/bin/pkill -9 -x ddm
 Restart=always
 
 CapabilityBoundingSet=CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_AUDIT_WRITE CAP_CHOWN CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_FOWNER CAP_KILL CAP_SETGID CAP_SETUID CAP_SYS_ADMIN CAP_SYS_BOOT CAP_SYS_CHROOT CAP_SYS_TTY_CONFIG CAP_SYS_RESOURCE

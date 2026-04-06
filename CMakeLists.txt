@@ -62,10 +62,29 @@ endif()
 find_package(PkgConfig REQUIRED)
 
 # PAM
-pkg_search_module(Pam REQUIRED IMPORTED_TARGET pam)
+pkg_search_module(Pam QUIET IMPORTED_TARGET pam)
+if (NOT Pam_FOUND)
+    find_path(PAM_INCLUDE_DIR security/pam_appl.h)
+    find_library(PAM_LIBRARY NAMES pam)
+    if (NOT PAM_INCLUDE_DIR OR NOT PAM_LIBRARY)
+        message(FATAL_ERROR "PAM development files not found")
+    endif()
+
+    add_library(PkgConfig::Pam INTERFACE IMPORTED)
+    set_property(TARGET PkgConfig::Pam PROPERTY
+        INTERFACE_INCLUDE_DIRECTORIES "${PAM_INCLUDE_DIR}")
+    set_property(TARGET PkgConfig::Pam PROPERTY
+        INTERFACE_LINK_LIBRARIES "${PAM_LIBRARY}")
+endif()
 
 # Systemd
-pkg_search_module(Systemd REQUIRED IMPORTED_TARGET systemd)
+pkg_search_module(Systemd QUIET IMPORTED_TARGET systemd)
+if (Systemd_FOUND)
+    set(SYSTEMD_PKG_NAME systemd)
+else()
+    pkg_search_module(Systemd REQUIRED IMPORTED_TARGET libsystemd)
+    set(SYSTEMD_PKG_NAME libsystemd)
+endif()
 
 # libsystemd
 pkg_search_module(LibSystemd REQUIRED IMPORTED_TARGET libsystemd)
@@ -92,15 +111,24 @@ if ("${ECM_VERSION}" VERSION_LESS "1.7.0")
 endif()
 
 if (NOT DEFINED SYSTEMD_SYSTEM_UNIT_DIR)
-    pkg_get_variable(SYSTEMD_SYSTEM_UNIT_DIR systemd systemdsystemunitdir)
+    pkg_get_variable(SYSTEMD_SYSTEM_UNIT_DIR ${SYSTEMD_PKG_NAME} systemdsystemunitdir)
+    if (NOT SYSTEMD_SYSTEM_UNIT_DIR)
+        set(SYSTEMD_SYSTEM_UNIT_DIR "${CMAKE_INSTALL_PREFIX}/lib/systemd/system")
+    endif()
 endif()
 
 if (NOT DEFINED SYSTEMD_SYSUSERS_DIR)
-    pkg_get_variable(SYSTEMD_SYSUSERS_DIR systemd sysusersdir)
+    pkg_get_variable(SYSTEMD_SYSUSERS_DIR ${SYSTEMD_PKG_NAME} sysusersdir)
+    if (NOT SYSTEMD_SYSUSERS_DIR)
+        set(SYSTEMD_SYSUSERS_DIR "${CMAKE_INSTALL_PREFIX}/lib/sysusers.d")
+    endif()
 endif()
 
 if (NOT DEFINED SYSTEMD_TMPFILES_DIR)
-    pkg_get_variable(SYSTEMD_TMPFILES_DIR systemd tmpfilesdir)
+    pkg_get_variable(SYSTEMD_TMPFILES_DIR ${SYSTEMD_PKG_NAME} tmpfilesdir)
+    if (NOT SYSTEMD_TMPFILES_DIR)
+        set(SYSTEMD_TMPFILES_DIR "${CMAKE_INSTALL_PREFIX}/lib/tmpfiles.d")
+    endif()
 endif()
 
 set(HALT_COMMAND "/usr/bin/systemctl poweroff")

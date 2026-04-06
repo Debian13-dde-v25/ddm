@@ -41,6 +41,11 @@ if [ "$1" = "configure" ]; then
     invoke-rc.d dbus reload || true
 fi
 
+if [ "$1" = "configure" ] && [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; then
+    systemctl enable getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service >/dev/null 2>&1 || true
+    systemctl start getty@tty2.service getty@tty3.service getty@tty4.service getty@tty5.service getty@tty6.service >/dev/null 2>&1 || true
+fi
+
 DEFAULT_SERVICE=/etc/systemd/system/display-manager.service
 # set default-display-manager systemd service link according to our config
 if [ "$1" = configure ] && [ -d /etc/systemd/system/ ]; then
